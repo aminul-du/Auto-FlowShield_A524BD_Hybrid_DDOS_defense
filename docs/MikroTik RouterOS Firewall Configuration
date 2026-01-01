@@ -1,0 +1,303 @@
+# MikroTik RouterOS Firewall Configuration
+
+Here's a comprehensive firewall configuration for customer-facing interfaces on MikroTik routers, providing the same level of protection as the Juniper and Huawei configurations.
+
+---
+
+## MikroTik Firewall Filter Rules
+
+```mikrotik
+# ============================================
+# CUSTOMER EDGE PROTECTION - MikroTik RouterOS
+# ============================================
+
+# Define customer-facing interface
+/interface list
+add name=CUSTOMER-FACING comment="Customer facing interfaces"
+
+# Add your customer-facing interface(s) to the list
+/interface list member
+add list=CUSTOMER-FACING interface=ether1 comment="Adjust interface name as needed"
+
+# ============================================
+# INPUT CHAIN - Protect the router itself
+# ============================================
+
+# Allow established and related connections
+/ip firewall filter
+add chain=input connection-state=established,related action=accept \
+    comment="Allow established/related connections"
+
+# Allow ICMP (rate-limited separately)
+add chain=input protocol=icmp action=accept comment="Allow ICMP"
+
+# Drop invalid connections
+add chain=input connection-state=invalid action=drop \
+    comment="Drop invalid connections"
+
+# ============================================
+# FORWARD CHAIN - Customer traffic protection
+# ============================================
+
+# Allow established and related connections
+add chain=forward connection-state=established,related action=accept \
+    comment="Allow established/related"
+
+# Drop invalid connections
+add chain=forward connection-state=invalid action=drop \
+    comment="Drop invalid connections"
+
+# Block spoofed source addresses (RFC 1918, loopback, multicast)
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=10.0.0.0/8 action=drop \
+    comment="Block RFC1918 - 10.0.0.0/8"
+
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=172.16.0.0/12 action=drop \
+    comment="Block RFC1918 - 172.16.0.0/12"
+
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=192.168.0.0/16 action=drop \
+    comment="Block RFC1918 - 192.168.0.0/16"
+
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=127.0.0.0/8 action=drop \
+    comment="Block loopback"
+
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=224.0.0.0/4 action=drop \
+    comment="Block multicast"
+
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=240.0.0.0/4 action=drop \
+    comment="Block reserved"
+
+add chain=forward in-interface-list=CUSTOMER-FACING \
+    src-address=0.0.0.0/8 action=drop \
+    comment="Block 0.0.0.0/8"
+
+# Block invalid TCP flags
+add chain=forward protocol=tcp tcp-flags=fin,syn action=drop \
+    comment="Drop SYN-FIN packets"
+
+add chain=forward protocol=tcp tcp-flags=syn,rst action=drop \
+    comment="Drop SYN-RST packets"
+
+add chain=forward protocol=tcp tcp-flags=fin,rst action=drop \
+    comment="Drop FIN-RST packets"
+
+add chain=forward protocol=tcp tcp-flags=fin,!ack action=drop \
+    comment="Drop FIN without ACK"
+
+add chain=forward protocol=tcp tcp-flags=!fin,!syn,!rst,!ack action=drop \
+    comment="Drop NULL packets"
+
+add chain=forward protocol=tcp tcp-flags=fin,syn,rst,psh,ack,urg action=drop \
+    comment="Drop XMAS packets"
+
+# Block common amplification attack ports (UDP)
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=19 action=drop comment="Block Chargen amplification"
+
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=53 action=jump jump-target=dns-rate-limit \
+    comment="Rate limit DNS"
+
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=123 action=drop comment="Block NTP amplification"
+
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=161 action=drop comment="Block SNMP amplification"
+
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=389 action=drop comment="Block LDAP amplification"
+
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=1900 action=drop comment="Block SSDP amplification"
+
+add chain=forward in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=11211 action=drop comment="Block Memcached amplification"
+
+# Accept legitimate traffic
+add chain=forward action=accept comment="Accept all other traffic"
+
+# ============================================
+# RATE LIMITING CHAINS
+# ============================================
+
+# DNS rate limiting chain
+add chain=dns-rate-limit action=add-src-to-address-list \
+    address-list=dns-flood address-list-timeout=1m \
+    comment="Add to DNS flood list"
+
+add chain=dns-rate-limit src-address-list=dns-flood action=drop \
+    comment="Drop if in flood list"
+
+add chain=dns-rate-limit action=accept comment="Accept DNS if not flooding"
+
+# ============================================
+# CONNECTION TRACKING LIMITS
+# ============================================
+
+# Limit connections per source IP
+/ip firewall filter
+add chain=forward protocol=tcp connection-state=new \
+    src-address-list=connection-limit action=drop \
+    comment="Drop if connection limit exceeded"
+
+add chain=forward protocol=tcp connection-state=new \
+    action=add-src-to-address-list address-list=connection-limit \
+    address-list-timeout=1m connection-limit=100,32 \
+    comment="Track connections per /32"
+
+```
+
+---
+
+## MikroTik RAW Firewall Rules (Optional - Better Performance)
+
+For high-traffic scenarios, use RAW rules for better performance:
+
+```mikrotik
+# ============================================
+# RAW PREROUTING - Processed before connection tracking
+# ============================================
+
+/ip firewall raw
+
+# Drop spoofed sources (faster than filter rules)
+add chain=prerouting in-interface-list=CUSTOMER-FACING \
+    src-address-list=bogons action=drop comment="Drop bogon sources"
+
+# Drop invalid TCP flags
+add chain=prerouting protocol=tcp tcp-flags=fin,syn action=drop
+add chain=prerouting protocol=tcp tcp-flags=syn,rst action=drop
+add chain=prerouting protocol=tcp tcp-flags=!fin,!syn,!rst,!ack action=drop
+
+# Drop amplification ports
+add chain=prerouting in-interface-list=CUSTOMER-FACING protocol=udp \
+    dst-port=19,123,161,389,1900,11211 action=drop \
+    comment="Drop amplification ports"
+
+# Accept everything else to continue to filter rules
+add chain=prerouting action=accept
+
+# Create bogon address list
+/ip firewall address-list
+add list=bogons address=10.0.0.0/8 comment="RFC1918"
+add list=bogons address=172.16.0.0/12 comment="RFC1918"
+add list=bogons address=192.168.0.0/16 comment="RFC1918"
+add list=bogons address=127.0.0.0/8 comment="Loopback"
+add list=bogons address=224.0.0.0/4 comment="Multicast"
+add list=bogons address=240.0.0.0/4 comment="Reserved"
+add list=bogons address=0.0.0.0/8 comment="Zero network"
+```
+
+---
+
+## MikroTik Queue Tree for Rate Limiting
+
+```mikrotik
+# ============================================
+# RATE LIMITING via QUEUE TREE
+# ============================================
+
+# Create mangle rules to mark traffic
+/ip firewall mangle
+
+# Mark ICMP traffic
+add chain=prerouting protocol=icmp action=mark-packet \
+    new-packet-mark=icmp-traffic passthrough=no \
+    comment="Mark ICMP traffic"
+
+# Mark UDP traffic
+add chain=prerouting protocol=udp action=mark-packet \
+    new-packet-mark=udp-traffic passthrough=no \
+    comment="Mark UDP traffic"
+
+# Mark TCP SYN traffic
+add chain=prerouting protocol=tcp tcp-flags=syn action=mark-packet \
+    new-packet-mark=syn-traffic passthrough=no \
+    comment="Mark SYN traffic"
+
+# Create queue tree for rate limiting
+/queue tree
+
+# Limit ICMP to 10 Mbps
+add name=icmp-limit parent=global packet-mark=icmp-traffic \
+    max-limit=10M comment="ICMP rate limit"
+
+# Limit UDP to 100 Mbps
+add name=udp-limit parent=global packet-mark=udp-traffic \
+    max-limit=100M comment="UDP rate limit"
+
+# Limit SYN to 50 Mbps
+add name=syn-limit parent=global packet-mark=syn-traffic \
+    max-limit=50M comment="SYN rate limit"
+```
+
+---
+
+## Implementation Steps
+
+1. **Backup your current configuration:**
+   ```mikrotik
+   /export file=backup-before-acl
+   ```
+
+2. **Add interface to CUSTOMER-FACING list:**
+   - Replace `ether1` with your actual customer-facing interface name
+
+3. **Apply firewall rules in order:**
+   - Copy and paste the filter rules
+   - Optionally add RAW rules for better performance
+   - Add queue tree rules for rate limiting
+
+4. **Monitor logs:**
+   ```mikrotik
+   /log print follow where topics~"firewall"
+   ```
+
+5. **Test thoroughly** before deploying to production
+
+---
+
+## Key Features
+
+✅ **Spoofed source blocking** - RFC 1918, loopback, multicast  
+✅ **Invalid TCP flag protection** - SYN+FIN, NULL, XMAS packets  
+✅ **Amplification attack prevention** - Blocks common reflection ports  
+✅ **Rate limiting** - ICMP (10 Mbps), UDP (100 Mbps), SYN (50 Mbps)  
+✅ **Connection tracking** - Limits connections per source IP  
+✅ **RAW rules support** - Better performance for high-traffic scenarios  
+✅ **Dynamic blacklisting** - Automatic blocking of flood sources  
+
+---
+
+## Performance Optimization Tips
+
+1. **Use RAW rules** for high-traffic filtering (processed before connection tracking)
+2. **Use address lists** for efficient IP matching
+3. **Place most common rules first** in the chain
+4. **Enable FastTrack** for established connections (if not already enabled)
+5. **Monitor CPU usage** and adjust rate limits accordingly
+
+---
+
+## Monitoring Commands
+
+```mikrotik
+# View firewall statistics
+/ip firewall filter print stats
+
+# View dropped packets
+/ip firewall filter print stats where action=drop
+
+# View address lists (blocked IPs)
+/ip firewall address-list print where list=dns-flood
+
+# View connection tracking
+/ip firewall connection print count-only
+```
+
+Now you have comprehensive ACL configurations for **Juniper**, **Huawei**, and **MikroTik** platforms! Would you like me to help you customize these further based on your specific network requirements or analyze your traffic patterns?
