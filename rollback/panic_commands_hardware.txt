@@ -1,0 +1,3 @@
+# !!! EMERGENCY CLEAR ALL !!!
+# HUAWEI: undo flow-route all / reset bgp flow-spec all
+# CISCO: no flowspec / router bgp X address-family ipv4 flowspec shutdown
