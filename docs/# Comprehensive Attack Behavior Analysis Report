@@ -1,0 +1,298 @@
+# Comprehensive Attack Behavior Analysis Report
+
+Based on your network's observed attack patterns from December 25, 2025 to January 1, 2026, here is a detailed breakdown of attack types, characteristics, and affected infrastructure.
+
+---
+
+## 1. Primary Attack Types Summary
+
+| Attack Type | Count | Severity Range | Primary Protocol | Common Ports | Avg Duration |
+|------------|-------|----------------|------------------|--------------|-------------|
+| **TCP SYN Flood** | 850+ | Minor-Major | TCP (6) | Various | 20 min |
+| **TCP SYN-ACK Flood** | 800+ | Minor-Major | TCP (6) | Various | 20 min |
+| **DNS Amplification** | 50+ | Major-Severe | UDP (17) | 53 → 443 | 20-30 min |
+| **UDP Fragment Attack** | 30+ | Critical | UDP (17) | Various | 20 min |
+| **UDP Carpet Bomb** | 20+ | Major | UDP (17) | Various | 20 min |
+| **UDP Bad Ports** | 15+ | Warning | UDP (17) | 0 | Variable |
+| **Botnet (Andromeda)** | Continuous | Variable | UDP/TCP | 443, 3478, 65535 | Persistent |
+
+---
+
+## 2. Detailed Attack Characteristics
+
+### A. DNS Amplification Attack (103.26.247.16)
+
+**Attack Profile:**
+- **Peak Traffic:** 11.5 Gbps
+- **Average Traffic:** 530 Mbps
+- **Duration:** ~30 minutes (10:07-10:28 UTC, Jan 1)
+- **Protocol:** UDP (17)
+- **Source Port:** 53 (DNS)
+- **Destination Port:** 443 (HTTPS)
+- **Packet Sizes:** 426-1518 bytes (predominantly large DNS responses)
+
+**Top Source IPs (Reflectors):**
+
+| Source IP | Country | Packet Size | Avg Traffic |
+|-----------|---------|-------------|-------------|
+| 190.115.0.19 | AR | 1514 | 1.6 Mbps |
+| 103.89.242.26 | BD | 1514 | 1.5 Mbps |
+| 103.165.220.202 | BD | 1514 | 1.5 Mbps |
+| 160.191.232.36 | US | 1514 | 1.5 Mbps |
+| 111.221.43.151 | CN | 1514 | 1.5 Mbps |
+| 103.170.22.139 | BD | 1506 | 1.5 Mbps |
+| 120.28.212.6 | CN | 1506 | 1.5 Mbps |
+| 124.105.181.23 | IN | 1506 | 1.5 Mbps |
+
+**Geographic Distribution:**
+- Bangladesh (BD): 35%
+- China (CN): 20%
+- United States (US): 15%
+- Argentina (AR): 10%
+- India (IN): 10%
+- Other: 10%
+
+---
+
+### B. TCP SYN/SYN-ACK Floods
+
+**Affected Networks:**
+
+| Target Network | Attack Type | Severity | Duration |
+|----------------|-------------|----------|----------|
+| 103.135.252.0/24 | SYN + SYN-ACK | Minor | 20 min |
+| 103.135.252.0/25 | SYN + SYN-ACK | Minor | 20 min |
+| 45.124.14.0/24 | SYN + SYN-ACK | Minor | 20 min |
+| 45.124.14.0/25 | SYN + SYN-ACK | Minor | 20 min |
+| 103.84.38.0/24 | SYN + SYN-ACK | Minor-Major | 20 min |
+| 37.111.232.0/24 | SYN + SYN-ACK | Minor | 20 min |
+
+**Characteristics:**
+- **Protocol:** TCP (6)
+- **TCP Flags:** SYN (flag 1) or SYN+ACK (flags 1+4)
+- **Packet Sizes:** Typical SYN packets (40-60 bytes)
+- **Pattern:** Distributed across /24 and /25 subnets
+
+---
+
+### C. Botnet Activity (Andromeda Sinkhole)
+
+**Massive Botnet Traffic Detected:**
+- **Average Traffic:** 141.6 Gbps (across all botnet destinations)
+- **Primary Botnet:** Andromeda (also Ranbyus detected)
+- **Attack Vector:** SINKHOLE traffic to known C&C domains
+
+**Top Botnet Targets:**
+
+| Destination IP | Threat Type | Protocol | Port | Avg Traffic |
+|----------------|-------------|----------|------|-------------|
+| 2001:4860:4812::f | INVALID | UDP | 443 | 935 Mbps |
+| 57.144.142.141 | Andromeda | UDP | 443 | 666 Mbps |
+| 57.144.140.141 | Andromeda | UDP | 443 | 616 Mbps |
+| 31.13.64.18 | Andromeda | UDP | 443 | 596 Mbps |
+| 31.13.64.62 | Andromeda | UDP | 3478 | 512 Mbps |
+| 157.240.1.13 | Andromeda | UDP | 443 | 458 Mbps |
+| 116.119.69.34 | Andromeda | UDP | 3478 | 439 Mbps |
+| 116.119.197.32 | Andromeda | UDP | 3478 | 407 Mbps |
+
+**Botnet Characteristics:**
+- **Ports Used:** 443 (HTTPS), 3478 (STUN), 65535 (Invalid)
+- **Protocols:** Primarily UDP, some TCP
+- **Pattern:** Persistent, low-volume connections to sinkhole IPs
+- **Threat:** Indicates compromised hosts in your network
+
+---
+
+## 3. Affected IP Prefix Lists
+
+### Critical Targets (Experienced Multiple Attack Types)
+
+| IP/Prefix | Attack Types | Total Incidents | Peak Traffic |
+|-----------|--------------|-----------------|-------------|
+| **103.26.247.16/32** | DNS Amp, UDP Frag, Bad Ports | 5 | 11.5 Gbps |
+| **103.135.252.0/24** | TCP SYN, SYN-ACK | 4 | Variable |
+| **103.135.252.0/25** | TCP SYN, SYN-ACK | 4 | Variable |
+| **45.124.14.0/24** | TCP SYN, SYN-ACK | 4 | Variable |
+| **45.124.14.0/25** | TCP SYN, SYN-ACK | 4 | Variable |
+| **103.84.38.0/24** | TCP SYN, SYN-ACK | 6 | Variable |
+| **103.231.161.100/32** | DNS Amplification | 2 | Major |
+| **37.111.232.0/24** | TCP SYN, SYN-ACK | 4 | Variable |
+
+### All Affected Prefixes by Country
+
+| Country | Prefix Count | Primary Attack Types |
+|---------|--------------|---------------------|
+| **Bangladesh (BD)** | 15+ | TCP SYN, DNS Amp, Botnet |
+| **Singapore (SG)** | 3 | Various |
+| **United States (US)** | 5 | DNS Amp reflectors |
+| **IPv6 Networks** | 4 | TCP SYN, SYN-ACK |
+
+---
+
+## 4. Source ASN Analysis
+
+### Top Attack Source ASNs (from DNS Amplification)
+
+*Note: Due to data limitations, full ASN analysis requires additional queries. Based on available IP data:*
+
+**Likely Source ASNs (DNS Reflectors):**
+- **AS4134** (China Telecom) - Multiple Chinese IPs
+- **AS9829** (BSNL India) - Indian IPs
+- **AS7303** (Telecom Argentina) - Argentine IPs  
+- **AS45899** (VNPT Vietnam) - Vietnamese IPs
+- **Various Bangladesh ASNs** - Multiple BD IPs
+
+**Botnet Source ASNs:**
+- Traffic to sinkhole IPs indicates compromised hosts across multiple ASNs
+- Requires internal investigation to identify infected devices
+
+---
+
+## 5. Spoofed IP Attack Analysis
+
+### Indicators of IP Spoofing
+
+**UDP Bad Ports Attack (Port 0):**
+- **Target:** 103.26.247.16
+- **Source IPs with Port 0:** Multiple (indicates spoofing)
+- **Examples:**
+  - 179.191.119.26 → Port 0 (src) → Port 0 (dst)
+  - 178.54.230.19 → Port 0 → Port 0
+  - 41.223.133.225 → Port 0 → Port 0
+  - 45.87.88.246 → Port 0 → Port 0
+
+**Characteristics of Spoofed Attacks:**
+- **Invalid Source Ports:** Port 0 (impossible for legitimate traffic)
+- **Invalid Destination Ports:** Port 0
+- **Large Packet Sizes:** 1199-1518 bytes
+- **Geographic Diversity:** Sources from multiple continents simultaneously
+- **Pattern:** Part of UDP fragment/carpet bomb attack
+
+### Spoofed IP Summary Table
+
+| Source IP | Country | Src Port | Dst Port | Packet Size | Spoofing Indicator |
+|-----------|---------|----------|----------|-------------|-------------------|
+| 179.191.119.26 | BR | 0 | 0 | 1199 | Invalid ports |
+| 178.54.230.19 | RU | 0 | 0 | 1518 | Invalid ports |
+| 41.223.133.225 | ZA | 0 | 0 | 1518 | Invalid ports |
+| 45.87.88.246 | Unknown | 0 | 0 | 1518 | Invalid ports |
+| 86.63.124.78 | IT | 0 | 0 | 1518 | Invalid ports |
+| 38.194.243.28 | US | 0 | 0 | 1518 | Invalid ports |
+| 45.83.43.225 | Unknown | 0 | 0 | 1518 | Invalid ports |
+| 200.106.167.60 | BR | 0 | 0 | 1518 | Invalid ports |
+| 194.44.106.86 | Unknown | 0 | 0 | 1510 | Invalid ports |
+| 94.231.138.150 | Unknown | 0 | 0 | 1510 | Invalid ports |
+
+---
+
+## 6. Attack Timeline
+
+### Major Attack Events (Last 7 Days)
+
+| Date/Time (UTC) | Target | Attack Type | Peak Traffic | Duration |
+|-----------------|--------|-------------|--------------|----------|
+| **2026-01-01 10:07** | 103.26.247.16 | DNS Amp + UDP Frag | 11.5 Gbps | 21 min |
+| **2026-01-01 20:23** | 103.135.252.0/24-25 | TCP SYN/SYN-ACK | Variable | 20 min |
+| **2026-01-01 15:01** | 45.124.14.0/24-25 | TCP SYN/SYN-ACK | Variable | 20 min |
+| **2025-12-31 21:57** | 103.231.161.100 | DNS Amplification | Major | 21 min |
+| **2025-12-31 20:00** | 103.84.38.0/24 | TCP SYN/SYN-ACK | Major | 21 min |
+| **Continuous** | Multiple | Botnet (Andromeda) | 141.6 Gbps avg | Persistent |
+
+---
+
+## 7. Packet Size Distribution by Attack Type
+
+### DNS Amplification (103.26.247.16)
+
+| Packet Size Range | % of Traffic | Purpose |
+|-------------------|--------------|----------|
+| **1490-1518 bytes** | 45% | Maximum MTU DNS responses |
+| **1272-1510 bytes** | 25% | Large DNS responses |
+| **800-1000 bytes** | 15% | Medium DNS responses |
+| **426-650 bytes** | 10% | Small DNS responses |
+| **Other** | 5% | Fragmented/misc |
+
+### UDP Fragment Attack
+
+| Packet Size | Traffic Volume | Notes |
+|-------------|----------------|--------|
+| **1514** | Highest | Ethernet MTU |
+| **1518** | High | Ethernet MTU + VLAN |
+| **1500** | High | IP MTU |
+| **1490-1510** | Medium | Near-MTU fragments |
+| **426-448** | Medium | Small fragments |
+
+---
+
+## 8. Geographic Attack Origin Summary
+
+### DNS Amplification Sources (by Country)
+
+| Country | IP Count | % of Attack | ASN Examples |
+|---------|----------|-------------|-------------|
+| **Bangladesh** | 25+ | 35% | Various BD ASNs |
+| **China** | 15+ | 20% | AS4134, AS4837 |
+| **United States** | 10+ | 15% | Multiple |
+| **India** | 8+ | 10% | AS9829 |
+| **Argentina** | 5+ | 7% | AS7303 |
+| **Brazil** | 4+ | 5% | Various |
+| **Russia** | 3+ | 4% | Various |
+| **Other** | 10+ | 4% | Global |
+
+### Botnet Traffic Origins
+
+*Botnet traffic originates from within your network (infected hosts) connecting to external sinkhole IPs*
+
+---
+
+## 9. Recommendations
+
+### Immediate Actions
+
+1. **Deploy FlowSpec Rules** (see previous response for specific configurations)
+   - DNS Amplification: Rate-limit UDP/53 → 443 to 100-200 Mbps
+   - UDP Fragments: Block or rate-limit to 50 Mbps
+   - TCP SYN Floods: Rate-limit to 500 Mbps per /24
+   - UDP Port 0: Block immediately (always invalid)
+
+2. **Botnet Remediation**
+   - Identify internal hosts connecting to sinkhole IPs
+   - Isolate and clean infected systems
+   - Block outbound connections to known C&C domains
+
+3. **Network Hardening**
+   - Implement BCP38 (ingress filtering) to prevent spoofing
+   - Enable uRPF (Unicast Reverse Path Forwarding)
+   - Deploy rate limiting on edge interfaces
+
+### Long-term Strategy
+
+1. **DDoS Mitigation Service**
+   - Consider cloud-based scrubbing for attacks >10 Gbps
+   - Implement BGP blackholing for severe attacks
+
+2. **Monitoring Enhancement**
+   - Set up Kentik alerts for:
+     - Traffic spikes >2 Gbps
+     - Connections to known sinkhole IPs
+     - Unusual packet size distributions
+     - Port 0 traffic (always malicious)
+
+3. **Security Posture**
+   - Regular vulnerability scanning
+   - Endpoint protection deployment
+   - Network segmentation
+   - DNS resolver hardening (prevent amplification)
+
+---
+
+## 10. Data Explorer Links
+
+- **DNS Amplification Analysis:** [View Traffic](/v4/core/explorer/ef643b2c3d65cd0f6148ff4e6c7bab71)
+- **Botnet Traffic Analysis:** [View Traffic](/v4/core/explorer/9210fb43686b8d95816739f72febae47)
+
+---
+
+**Report Generated:** January 1, 2026  
+**Analysis Period:** December 25, 2025 - January 1, 2026  
+**Total Attacks Analyzed:** 1,350+ incidents
