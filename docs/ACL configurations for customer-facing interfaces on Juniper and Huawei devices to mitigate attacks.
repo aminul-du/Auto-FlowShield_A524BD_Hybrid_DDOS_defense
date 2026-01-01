@@ -1,0 +1,312 @@
+I'd be happy to help you create ACL configurations for customer-facing interfaces on Juniper and Huawei devices to mitigate attacks. However, I need some additional information to provide the most effective configurations:
+
+## Clarification Needed
+
+1. **Attack Behavior Details**: What specific "Comprehensive Attack Behavior" are you referring to?
+   - Do you have recent DDoS alerts I should review?
+   - Are there specific attack types you're seeing (UDP floods, SYN floods, DNS amplification, etc.)?
+   - Do you have traffic data showing the attack patterns?
+
+2. **Scope Information**:
+   - Which specific customer-facing interfaces need protection?
+   - Are there particular IP ranges or services that are being targeted?
+   - Do you need to allow specific legitimate traffic patterns?
+
+## How I Can Help
+
+Once you provide these details, I can:
+- Analyze recent alerts or traffic data to identify attack patterns
+- Generate comprehensive ACL configurations tailored to your specific threats
+- Provide both Juniper (firewall filter) and Huawei (ACL) syntax
+- Include best practices for customer edge protection
+
+**Would you like me to:**
+- Review your recent DDoS or security alerts?
+- Analyze traffic patterns to identify attack behaviors?
+- Provide general best-practice ACLs for common attack types?
+
+
+# Standard ACL Configurations for Customer-Facing Interfaces
+
+Here are comprehensive, standard ACL configurations for protecting customer-facing interfaces on both Juniper and Huawei devices against common attack vectors.
+
+---
+
+## Juniper Firewall Filter Configuration
+
+```juniper
+# Apply to customer-facing interfaces
+firewall {
+    family inet {
+        filter CUSTOMER-EDGE-PROTECTION {
+            # Allow established connections
+            term allow-established {
+                from {
+                    tcp-established;
+                }
+                then accept;
+            }
+            
+            # Block invalid TCP flags
+            term block-invalid-tcp {
+                from {
+                    tcp-flags "(fin|syn|rst|psh|ack|urg) & (fin|syn)";
+                }
+                then {
+                    log;
+                    discard;
+                }
+            }
+            
+            # Rate limit ICMP
+            term rate-limit-icmp {
+                from {
+                    protocol icmp;
+                }
+                then {
+                    policer icmp-policer;
+                    accept;
+                }
+            }
+            
+            # Block common attack protocols
+            term block-fragmented-traffic {
+                from {
+                    is-fragment;
+                    fragment-flags dont-fragment;
+                }
+                then {
+                    log;
+                    discard;
+                }
+            }
+            
+            # Block spoofed source addresses (RFC 1918, loopback, multicast)
+            term block-spoofed-sources {
+                from {
+                    source-address {
+                        10.0.0.0/8;
+                        172.16.0.0/12;
+                        192.168.0.0/16;
+                        127.0.0.0/8;
+                        224.0.0.0/4;
+                        240.0.0.0/4;
+                        0.0.0.0/8;
+                    }
+                }
+                then {
+                    log;
+                    discard;
+                }
+            }
+            
+            # Rate limit UDP traffic
+            term rate-limit-udp {
+                from {
+                    protocol udp;
+                }
+                then {
+                    policer udp-policer;
+                    accept;
+                }
+            }
+            
+            # Block common amplification attack ports
+            term block-amplification-ports {
+                from {
+                    protocol udp;
+                    destination-port [ 19 53 123 161 389 1900 11211 ];
+                }
+                then {
+                    policer strict-udp-policer;
+                    accept;
+                }
+            }
+            
+            # Rate limit SYN packets
+            term rate-limit-syn {
+                from {
+                    protocol tcp;
+                    tcp-flags syn;
+                }
+                then {
+                    policer syn-policer;
+                    accept;
+                }
+            }
+            
+            # Allow legitimate traffic
+            term allow-legitimate {
+                then accept;
+            }
+        }
+    }
+}
+
+# Policer definitions
+policer icmp-policer {
+    if-exceeding {
+        bandwidth-limit 10m;
+        burst-size-limit 1m;
+    }
+    then discard;
+}
+
+policer udp-policer {
+    if-exceeding {
+        bandwidth-limit 100m;
+        burst-size-limit 10m;
+    }
+    then discard;
+}
+
+policer strict-udp-policer {
+    if-exceeding {
+        bandwidth-limit 10m;
+        burst-size-limit 1m;
+    }
+    then discard;
+}
+
+policer syn-policer {
+    if-exceeding {
+        bandwidth-limit 50m;
+        burst-size-limit 5m;
+    }
+    then discard;
+}
+
+# Apply to interface
+interfaces {
+    <interface-name> {
+        unit 0 {
+            family inet {
+                filter {
+                    input CUSTOMER-EDGE-PROTECTION;
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+## Huawei ACL Configuration
+
+```huawei
+# Advanced ACL for customer-facing interfaces
+acl number 3000
+ description Customer Edge Protection
+ 
+ # Block spoofed source addresses (RFC 1918, loopback, multicast)
+ rule 5 deny ip source 10.0.0.0 0.255.255.255
+ rule 10 deny ip source 172.16.0.0 0.15.255.255
+ rule 15 deny ip source 192.168.0.0 0.0.255.255
+ rule 20 deny ip source 127.0.0.0 0.255.255.255
+ rule 25 deny ip source 224.0.0.0 15.255.255.255
+ rule 30 deny ip source 240.0.0.0 15.255.255.255
+ rule 35 deny ip source 0.0.0.0 0.255.255.255
+ 
+ # Block invalid TCP flags (SYN+FIN)
+ rule 40 deny tcp tcp-flag syn fin
+ rule 45 deny tcp tcp-flag fin rst psh urg
+ 
+ # Allow established TCP connections
+ rule 50 permit tcp established
+ 
+ # Rate limit ICMP (applied via traffic policy)
+ rule 100 permit icmp
+ 
+ # Block common amplification attack destination ports
+ rule 110 deny udp destination-port eq 19
+ rule 115 deny udp destination-port eq 53
+ rule 120 deny udp destination-port eq 123
+ rule 125 deny udp destination-port eq 161
+ rule 130 deny udp destination-port eq 389
+ rule 135 deny udp destination-port eq 1900
+ rule 140 deny udp destination-port eq 11211
+ 
+ # Allow legitimate UDP traffic (rate-limited via traffic policy)
+ rule 200 permit udp
+ 
+ # Allow legitimate TCP traffic (rate-limited via traffic policy)
+ rule 300 permit tcp
+ 
+ # Deny all other traffic
+ rule 9999 deny ip
+
+# Traffic policy for rate limiting
+traffic classifier icmp-traffic
+ if-match acl 3001
+
+traffic classifier udp-traffic
+ if-match acl 3002
+
+traffic classifier syn-traffic
+ if-match acl 3003
+
+acl number 3001
+ rule permit icmp
+
+acl number 3002
+ rule permit udp
+
+acl number 3003
+ rule permit tcp tcp-flag syn
+
+traffic behavior icmp-limit
+ car cir 10000 cbs 1000000 green pass red discard
+
+traffic behavior udp-limit
+ car cir 100000 cbs 10000000 green pass red discard
+
+traffic behavior syn-limit
+ car cir 50000 cbs 5000000 green pass red discard
+
+traffic policy customer-edge-policy
+ classifier icmp-traffic behavior icmp-limit
+ classifier udp-traffic behavior udp-limit
+ classifier syn-traffic behavior syn-limit
+
+# Apply to interface
+interface <interface-type><interface-number>
+ description Customer Facing Interface
+ traffic-filter inbound acl 3000
+ traffic-policy customer-edge-policy inbound
+```
+
+---
+
+## Key Protection Features
+
+These ACLs provide protection against:
+
+1. **Spoofed Traffic**: Blocks RFC 1918 private addresses, loopback, and multicast sources
+2. **Invalid TCP Flags**: Prevents SYN+FIN and other malformed packets
+3. **Amplification Attacks**: Blocks/rate-limits common reflection ports (DNS, NTP, SNMP, etc.)
+4. **ICMP Floods**: Rate limits ICMP traffic to 10 Mbps
+5. **UDP Floods**: Rate limits UDP traffic to 100 Mbps
+6. **SYN Floods**: Rate limits TCP SYN packets to 50 Mbps
+7. **Fragmented Attacks**: Blocks suspicious fragmented traffic
+
+## Implementation Notes
+
+- **Adjust rate limits** based on your legitimate traffic patterns
+- **Test in lab environment** before production deployment
+- **Monitor logs** for false positives after implementation
+- **Customize interface names** to match your device configuration
+- **Review regularly** and adjust based on attack patterns
+
+## Recommendations
+
+For more targeted protection, I can help you:
+- Analyze recent alerts to identify specific attack patterns
+- Review traffic data to optimize rate limits
+- Create custom ACLs for your specific network topology
+
+Would you like me to review your recent security alerts or traffic patterns to further refine these configurations?
+
+
+
+Please let me know which approach would be most helpful, and I'll provide detailed, production-ready configurations.
