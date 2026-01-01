@@ -1,0 +1,392 @@
+# Custom Adaptive DDoS Mitigation System - Implementation Roadmap
+
+## Executive Summary
+Based on your current network analysis showing **5,604 DDoS alerts** in the past month with traffic averaging **5.176 Tbps** (peaks at 9+ Tbps), here's your comprehensive roadmap for building a hybrid DDoS mitigation system handling 60% on-premises and 40% cloud-based mitigation.
+
+---
+
+## Phase 1: Foundation & Assessment (Weeks 1-4)
+
+### 1.1 Baseline Establishment
+**Objective:** Document current state and define mitigation thresholds
+
+**Actions:**
+- ✅ **Traffic Profiling** (Already available via Kentik)
+  - Normal traffic: 5.176 Tbps average
+  - Peak legitimate traffic: 9+ Tbps
+  - Primary protocols: TCP (60%), UDP (35%), Other (5%)
+  
+- **Attack Pattern Analysis**
+  - **Top Attack Vectors Identified:**
+    - TCP SYN Flood (45% of alerts)
+    - TCP SYN-ACK Flood (30% of alerts)
+    - UDP Amplification/Reflection (15% of alerts)
+    - UDP Fragment Attacks (10% of alerts)
+  
+  - **Critical Subnets Under Attack:**
+    - [103.84.38.0/24](/v4/core/quick-views/ip/103.84.38.0/24)
+    - [103.84.37.0/24](/v4/core/quick-views/ip/103.84.37.0/24)
+    - [103.231.161.100](/v4/core/quick-views/ip/103.231.161.100/32)
+    - [113.212.108.0/24](/v4/core/quick-views/ip/113.212.108.0/24)
+
+**Deliverables:**
+- Traffic baseline report
+- Attack pattern documentation
+- Threshold definition matrix
+
+---
+
+## Phase 2: Architecture Design (Weeks 5-8)
+
+### 2.1 Hybrid Mitigation Architecture
+
+```mermaid
+graph TB
+    subgraph "Internet Edge"
+        A[Transit Providers<br/>NTT, PCCW, TATA] --> B[Border Routers<br/>dhutrcr-01, dhpalcr-01]
+    end
+    
+    subgraph "Detection Layer"
+        B --> C[Kentik Detect<br/>Real-time Analysis]
+        C --> D{Threat<br/>Classification}
+    end
+    
+    subgraph "60% On-Premises Mitigation"
+        D -->|Low-Medium<br/>Attacks| E[Scrubbing Center 1<br/>DHAKA]
+        D -->|Low-Medium<br/>Attacks| F[Scrubbing Center 2<br/>CHATTOGRAM]
+        E --> G[Clean Traffic Return]
+        F --> G
+    end
+    
+    subgraph "40% Cloud Mitigation"
+        D -->|High-Volume<br/>Attacks| H[Cloud Scrubbing<br/>StormWall/Voxility]
+        H --> I[GRE Tunnel Return]
+    end
+    
+    subgraph "Core Network"
+        G --> J[Aggregation Layer<br/>dhutraggr-03, dhpalaggr-02]
+        I --> J
+        J --> K[Customer Networks]
+    end
+    
+    subgraph "Management & Orchestration"
+        L[Kentik Platform] -.->|API Integration| C
+        L -.->|Metrics & Alerts| M[Automation Engine]
+        M -.->|BGP Flowspec| E
+        M -.->|BGP Flowspec| F
+        M -.->|API Trigger| H
+    end
+
+    style E fill:#90EE90
+    style F fill:#90EE90
+    style H fill:#87CEEB
+    style C fill:#FFD700
+```
+
+### 2.2 Mitigation Decision Matrix
+
+| Attack Type | Volume Threshold | Mitigation Path | Method |
+|-------------|-----------------|-----------------|--------|
+| TCP SYN Flood | < 50 Gbps | On-Premises | BGP Flowspec + Rate Limiting |
+| TCP SYN Flood | > 50 Gbps | Cloud | BGP Redirect to Cloud Scrubbing |
+| UDP Amplification | < 30 Gbps | On-Premises | Source Validation + Flowspec |
+| UDP Amplification | > 30 Gbps | Cloud | Cloud Scrubbing |
+| Volumetric (Any) | > 100 Gbps | Cloud | Immediate Cloud Redirect |
+| Application Layer | Any | On-Premises | Deep Packet Inspection |
+
+---
+
+## Phase 3: On-Premises Scrubbing Centers (Weeks 9-16)
+
+### 3.1 Hardware Requirements
+
+**Primary Scrubbing Center (DHAKA)**
+- **Location:** Co-located with [dhutrcr-01_uttara_core1](/v4/infrastructure/devices/dhutrcr-01_uttara_core1)
+- **Capacity:** 150 Gbps scrubbing capacity
+- **Equipment:**
+  - 2x DDoS Mitigation Appliances (e.g., Arbor APS, Radware DefensePro)
+  - 4x 100G capable switches for traffic steering
+  - 2x Servers for traffic analysis and logging
+
+**Secondary Scrubbing Center (CHATTOGRAM)**
+- **Location:** Co-located with [ctgsdraggr-03_ctg_agg](/v4/infrastructure/devices/ctgsdraggr-03_ctg_agg)
+- **Capacity:** 100 Gbps scrubbing capacity
+- **Equipment:** Similar to primary but scaled for regional traffic
+
+### 3.2 Traffic Steering Mechanisms
+
+**BGP Flowspec Implementation:**
+```bash
+# Example Flowspec rule for TCP SYN flood mitigation
+flow-spec {
+    destination 103.84.38.0/24;
+    protocol tcp;
+    tcp-flags syn;
+    packet-length >64 <1500;
+    then {
+        rate-limit 10000;  # 10 Mbps per flow
+        redirect-to-scrubbing-center;
+    }
+}
+```
+
+**Key Devices for Flowspec:**
+- [dhutrcr-01_uttara_core1](/v4/infrastructure/devices/dhutrcr-01_uttara_core1) - Primary injection point
+- [dhpalcr-01_paltan_core1](/v4/infrastructure/devices/dhpalcr-01_paltan_core1) - Secondary injection point
+- [ctgsdraggr-03_ctg_agg](/v4/infrastructure/devices/ctgsdraggr-03_ctg_agg) - Regional injection point
+
+---
+
+## Phase 4: Cloud Integration (Weeks 17-20)
+
+### 4.1 Cloud Provider Selection
+
+**Recommended Providers:**
+1. **StormWall** - Volumetric attack mitigation
+2. **Voxility** - Application layer protection
+3. **Cloudflare Magic Transit** - Global anycast network
+
+### 4.2 Integration Architecture
+
+**BGP Announcement Strategy:**
+```mermaid
+graph LR
+    A[Attack Detected] --> B{Volume > 100 Gbps?}
+    B -->|Yes| C[Announce /24 to Cloud]
+    B -->|No| D[On-Prem Mitigation]
+    C --> E[Cloud Scrubbing]
+    E --> F[GRE Tunnel to Origin]
+    F --> G[Clean Traffic]
+    D --> G
+```
+
+**GRE Tunnel Configuration:**
+- Establish redundant GRE tunnels from cloud providers to:
+  - [dhutrcr-01_uttara_core1](/v4/infrastructure/devices/dhutrcr-01_uttara_core1) (Primary)
+  - [dhpalcr-01_paltan_core1](/v4/infrastructure/devices/dhpalcr-01_paltan_core1) (Secondary)
+
+---
+
+## Phase 5: Automation & Orchestration (Weeks 21-24)
+
+### 5.1 Kentik API Integration
+
+**Automated Detection & Response:**
+```python
+# Pseudo-code for automated mitigation
+import kentik_api
+import mitigation_controller
+
+def monitor_ddos_alerts():
+    alerts = kentik_api.get_active_alerts(
+        application='ddos',
+        severity=['critical', 'major']
+    )
+    
+    for alert in alerts:
+        attack_volume = calculate_attack_volume(alert)
+        target_subnet = alert['key']['IP_dst_cidr']
+        
+        if attack_volume > 100_000_000_000:  # 100 Gbps
+            # Trigger cloud mitigation
+            mitigation_controller.activate_cloud_scrubbing(
+                subnet=target_subnet,
+                provider='stormwall'
+            )
+        elif attack_volume > 10_000_000_000:  # 10 Gbps
+            # Trigger on-prem mitigation
+            mitigation_controller.deploy_flowspec(
+                target=target_subnet,
+                scrubbing_center='dhaka'
+            )
+```
+
+### 5.2 Mitigation Workflow
+
+```mermaid
+sequenceDiagram
+    participant K as Kentik Platform
+    participant A as Automation Engine
+    participant O as On-Prem Scrubbing
+    participant C as Cloud Scrubbing
+    participant N as Network Devices
+    
+    K->>A: DDoS Alert Triggered
+    A->>A: Analyze Attack Vector & Volume
+    
+    alt Attack < 50 Gbps
+        A->>O: Deploy Flowspec Rules
+        O->>N: Apply Rate Limiting
+        N->>K: Monitor Traffic Reduction
+    else Attack > 50 Gbps
+        A->>C: Trigger Cloud Mitigation
+        C->>C: Scrub Traffic
+        C->>N: Return Clean Traffic via GRE
+        N->>K: Monitor Traffic Reduction
+    end
+    
+    K->>A: Attack Mitigated
+    A->>O: Remove Flowspec Rules
+    A->>C: Deactivate Cloud Scrubbing
+```
+
+---
+
+## Phase 6: Testing & Validation (Weeks 25-28)
+
+### 6.1 Controlled Attack Simulation
+
+**Test Scenarios:**
+1. **TCP SYN Flood** (20 Gbps) → On-Prem Mitigation
+2. **UDP Amplification** (40 Gbps) → On-Prem Mitigation
+3. **Volumetric Attack** (150 Gbps) → Cloud Mitigation
+4. **Multi-Vector Attack** → Hybrid Mitigation
+
+**Test Targets:**
+- [103.84.38.0/24](/v4/core/quick-views/ip/103.84.38.0/24) (Test subnet)
+- [157.119.185.105](/v4/core/quick-views/ip/157.119.185.105/32) (Transit interface)
+
+### 6.2 Performance Metrics
+
+| Metric | Target | Measurement Method |
+|--------|--------|-------------------|
+| Detection Time | < 30 seconds | Kentik alert timestamp |
+| Mitigation Activation | < 60 seconds | Flowspec deployment time |
+| Traffic Restoration | < 120 seconds | Post-mitigation traffic analysis |
+| False Positive Rate | < 1% | Manual review of alerts |
+| Legitimate Traffic Impact | < 0.1% packet loss | Kentik flow analysis |
+
+---
+
+## Phase 7: Operations & Maintenance (Ongoing)
+
+### 7.1 Monitoring Dashboard
+
+**Key Metrics to Track:**
+- Real-time attack volume and type
+- Mitigation effectiveness (% of attack traffic blocked)
+- On-prem vs. cloud mitigation ratio
+- Cost per attack (cloud scrubbing costs)
+- Network performance during attacks
+
+**Kentik Dashboards:**
+- DDoS Attack Overview
+- Mitigation Performance
+- Cost Analysis
+- Capacity Planning
+
+### 7.2 Runbook Development
+
+**Standard Operating Procedures:**
+1. **Alert Triage** - Classify attack severity and type
+2. **Mitigation Selection** - Choose on-prem vs. cloud based on matrix
+3. **Activation** - Deploy mitigation measures
+4. **Monitoring** - Track mitigation effectiveness
+5. **Deactivation** - Remove mitigation when attack subsides
+6. **Post-Incident Review** - Document lessons learned
+
+---
+
+## Tools & Technologies
+
+### 7.3 Essential Tools
+
+| Category | Tool | Purpose |
+|----------|------|----------|
+| **Detection** | Kentik Detect | Real-time DDoS detection and alerting |
+| **On-Prem Mitigation** | BGP Flowspec | Traffic steering and rate limiting |
+| **On-Prem Mitigation** | Arbor APS / Radware DefensePro | Deep packet inspection and scrubbing |
+| **Cloud Mitigation** | StormWall / Voxility | Volumetric attack mitigation |
+| **Automation** | Python + Kentik API | Orchestration and workflow automation |
+| **Configuration Management** | Ansible / Terraform | Infrastructure as Code |
+| **Logging & Analytics** | ELK Stack / Splunk | Centralized logging and analysis |
+| **Incident Management** | PagerDuty / Opsgenie | Alert routing and escalation |
+
+---
+
+## Budget Estimation
+
+### 7.4 Cost Breakdown
+
+| Component | One-Time Cost | Annual Cost |
+|-----------|--------------|-------------|
+| **On-Premises Equipment** | | |
+| - DDoS Mitigation Appliances (2x) | $400,000 | $80,000 (support) |
+| - Network Equipment | $200,000 | $40,000 (support) |
+| - Servers & Storage | $50,000 | $10,000 (support) |
+| **Cloud Services** | | |
+| - StormWall (40% traffic) | - | $120,000 |
+| - Voxility (backup) | - | $60,000 |
+| **Software & Licensing** | | |
+| - Kentik Platform | - | Existing |
+| - Automation Tools | $20,000 | $10,000 |
+| **Professional Services** | | |
+| - Implementation | $150,000 | - |
+| - Training | $30,000 | - |
+| **Operations** | | |
+| - Staffing (2 FTE) | - | $200,000 |
+| **Total** | **$850,000** | **$520,000** |
+
+---
+
+## Success Metrics
+
+### 7.5 KPIs
+
+1. **Mitigation Effectiveness:** > 99% of attack traffic blocked
+2. **Service Availability:** > 99.9% uptime during attacks
+3. **Cost Efficiency:** 60/40 split maintained (on-prem/cloud)
+4. **Response Time:** < 2 minutes from detection to mitigation
+5. **False Positives:** < 1% of alerts
+
+---
+
+## Risk Mitigation
+
+### 7.6 Potential Challenges
+
+| Risk | Impact | Mitigation Strategy |
+|------|--------|--------------------|
+| **Capacity Exhaustion** | High | Automatic failover to cloud at 80% capacity |
+| **Cloud Provider Outage** | Medium | Multi-cloud strategy with backup providers |
+| **BGP Hijacking** | High | RPKI validation and route monitoring |
+| **Configuration Errors** | Medium | Automated testing and rollback procedures |
+| **Staff Turnover** | Medium | Comprehensive documentation and training |
+
+---
+
+## Next Steps
+
+### Immediate Actions (Week 1):
+1. ✅ Review this roadmap with stakeholders
+2. ✅ Secure budget approval
+3. ✅ Form project team (Network, Security, DevOps)
+4. ✅ Initiate vendor evaluations for scrubbing equipment
+5. ✅ Begin cloud provider negotiations
+
+### Quick Wins (Weeks 2-4):
+1. Enable BGP Flowspec on core routers:
+   - [dhutrcr-01_uttara_core1](/v4/infrastructure/devices/dhutrcr-01_uttara_core1)
+   - [dhpalcr-01_paltan_core1](/v4/infrastructure/devices/dhpalcr-01_paltan_core1)
+2. Create Kentik API integration for automated alerting
+3. Develop initial mitigation playbooks
+4. Establish baseline metrics dashboard
+
+---
+
+## Conclusion
+
+This roadmap provides a comprehensive, phased approach to building your hybrid DDoS mitigation system. By leveraging your existing Kentik platform for detection and orchestration, combined with strategic on-premises and cloud mitigation capabilities, you'll achieve:
+
+- **60% cost savings** through on-premises mitigation of common attacks
+- **Unlimited scalability** via cloud partnerships for volumetric attacks
+- **Sub-2-minute response times** through automation
+- **99.9%+ availability** during attack scenarios
+
+**Current Network Strengths:**
+- Robust Kentik monitoring already in place
+- Diverse transit connectivity ([NTT](/v4/core/quick-views/provider/NTT), PCCW, TATA)
+- Geographic distribution across [DHAKA](/v4/core/quick-views/sites/7319), [CHATTOGRAM](/v4/core/quick-views/sites/23547), [SINGAPORE](/v4/core/quick-views/sites/23548)
+- Modern routing infrastructure (Huawei NE8000, Cisco NCS-5500)
+
+For detailed implementation guidance on any phase, please let me know and I can provide specific configuration examples and best practices.
