@@ -1,0 +1,112 @@
+# FlowSpec-Based DDoS Mitigation in Kentik
+
+I apologize, but I'm currently unable to access the Kentik Knowledge Base due to a temporary service issue. However, I can provide you with general information about FlowSpec-based mitigation that Kentik supports.
+
+## What is FlowSpec?
+
+FlowSpec (RFC 5575) is a BGP extension that allows you to distribute traffic flow specifications to routers for automated DDoS mitigation. Kentik can detect attacks and automatically push FlowSpec rules to your network devices to block or rate-limit malicious traffic at the edge.
+
+## Common Attack Types Mitigated by FlowSpec
+
+FlowSpec can effectively handle these attack types:
+
+1. **Volumetric Attacks**
+   - UDP floods
+   - ICMP floods
+   - Amplification attacks (DNS, NTP, SSDP, Memcached)
+
+2. **Protocol Attacks**
+   - TCP SYN floods
+   - TCP ACK floods
+   - TCP RST/FIN floods
+   - Fragmented packet attacks
+
+3. **Application Layer Attacks**
+   - HTTP floods (when identifiable by port/protocol)
+   - DNS query floods
+
+## FlowSpec Configuration Examples
+
+### Example 1: Block UDP Flood to Specific IP
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+    }
+    then discard;
+}
+```
+
+### Example 2: Rate-Limit TCP SYN Flood
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol tcp;
+        destination <target-ip>/32;
+        tcp-flags syn;
+    }
+    then rate-limit 1000000;  # 1 Mbps
+}
+```
+
+### Example 3: Block DNS Amplification Attack
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        source-port 53;
+        packet-length >512;
+    }
+    then discard;
+}
+```
+
+### Example 4: Block ICMP Flood
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol icmp;
+        destination <target-ip>/32;
+    }
+    then discard;
+}
+```
+
+### Example 5: Block Fragmented Packets
+```
+flow-route <target-ip>/32 {
+    match {
+        destination <target-ip>/32;
+        fragment is-fragment;
+    }
+    then discard;
+}
+```
+
+## How Kentik Implements FlowSpec
+
+1. **Detection**: Kentik's DDoS detection identifies attack patterns in your flow data
+2. **Alert Generation**: When thresholds are exceeded, alerts are triggered
+3. **FlowSpec Rule Creation**: Kentik automatically generates appropriate FlowSpec rules
+4. **Distribution**: Rules are pushed via BGP to your routers
+5. **Mitigation**: Routers apply the rules to drop or rate-limit malicious traffic
+6. **Monitoring**: Kentik continues monitoring to verify mitigation effectiveness
+
+## Best Practices
+
+- **Start with rate-limiting** before moving to discard actions
+- **Use specific match criteria** to avoid blocking legitimate traffic
+- **Monitor mitigation effectiveness** through Kentik's dashboards
+- **Set appropriate thresholds** for automatic FlowSpec deployment
+- **Test FlowSpec rules** in a controlled environment first
+
+---
+
+**Note**: For detailed configuration specific to your Kentik deployment and network infrastructure, I recommend:
+- Contacting Kentik Support for personalized assistance
+- Reviewing your specific DDoS mitigation policies in the Kentik Portal
+- Consulting with your network team about router FlowSpec capabilities
+
+Once the Knowledge Base is accessible again, I can provide more detailed Kentik-specific documentation and examples tailored to your environment.
