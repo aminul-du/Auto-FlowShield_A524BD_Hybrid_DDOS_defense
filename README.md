@@ -5,3 +5,5 @@
 ## 🏗️ Architecture
 - **60% Risk:** Handled by On-Prem Off-Ramp (BGP FlowSpec/ACL).
 - **40% Traffic:** Diverted to Cloud Scrubbing (StormWall) at 90% Uplink saturation.
+## ⚙️ Configuration
+Configuration is stored in the `config/` directory. See `docs/CONFIGURATION.md` for details and a sample config (`config/sample_config.yml`).
