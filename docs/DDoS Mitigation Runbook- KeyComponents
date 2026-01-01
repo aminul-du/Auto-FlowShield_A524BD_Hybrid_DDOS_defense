@@ -1,0 +1,85 @@
+I apologize, but I'm currently unable to access the Kentik Knowledge Base due to a temporary service issue. However, I can provide you with general guidance on DDoS mitigation runbooks based on industry best practices and Kentik's capabilities:
+
+## DDoS Mitigation Runbook - Key Components
+
+### 1. **Detection & Alert Response**
+- Monitor Kentik alerts for DDoS attack indicators (TCP SYN floods, UDP floods, volumetric attacks)
+- Verify alert legitimacy using Data Explorer to analyze traffic patterns
+- Document baseline traffic metrics for comparison
+
+### 2. **TCP SYN Flood Attack Runbook**
+
+**Step 1: Detection**
+- Alert triggers on abnormal TCP SYN packet rates
+- Verify using Kentik's DDoS detection policies
+- Check for SYN/ACK ratio imbalance
+
+**Step 2: Analysis**
+- Use Data Explorer to identify:
+  - Source IPs and ASNs
+  - Target destination IPs/ports
+  - Attack volume (packets per second, bits per second)
+  - Geographic distribution of attack sources
+
+**Step 3: Mitigation**
+- Implement SYN cookies on affected devices
+- Apply rate limiting on upstream routers
+- Deploy ACLs to block malicious source IPs/networks
+- Engage with upstream ISP for traffic scrubbing if needed
+- Consider BGP blackholing for severe attacks
+
+**Step 4: Monitoring**
+- Continuously monitor attack metrics
+- Adjust mitigation strategies as attack evolves
+- Document all actions taken
+
+**Step 5: Recovery & Post-Incident**
+- Gradually remove mitigation controls
+- Verify normal service restoration
+- Conduct post-mortem analysis
+- Update runbooks based on lessons learned
+
+### 3. **Essential Runbook Elements**
+
+**Pre-Attack Preparation:**
+- Contact lists (internal teams, ISPs, scrubbing services)
+- Escalation procedures and thresholds
+- Baseline traffic profiles
+- Pre-configured mitigation templates
+
+**During Attack:**
+- Clear decision trees and action items
+- Communication protocols (internal/external)
+- Mitigation activation procedures
+- Documentation requirements
+
+**Post-Attack:**
+- Service restoration checklist
+- Incident report template
+- Lessons learned review process
+- Runbook update procedures
+
+### 4. **Kentik-Specific Tools to Leverage**
+
+- **Alerts**: Configure DDoS-specific alert policies
+- **Data Explorer**: Real-time traffic analysis and filtering
+- **Device Inventory**: Quick access to network topology
+- **NMS Metrics**: Monitor device health during attacks
+
+### 5. **Phase 7.2 - Runbook Development Best Practices**
+
+- Document all common attack scenarios
+- Include screenshots and CLI commands
+- Define clear roles and responsibilities
+- Establish testing and validation procedures
+- Schedule regular runbook reviews and updates
+- Incorporate feedback from actual incidents
+
+## Recommended Next Steps
+
+1. Please try accessing the Knowledge Base again later for official Kentik documentation
+2. Review your current DDoS alert policies in the Kentik Portal
+3. Test your runbooks with tabletop exercises
+4. Ensure all team members have access to runbook documentation
+
+Would you like me to help you analyze any current DDoS alerts or configure specific detection policies in Kentik?
