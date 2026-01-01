@@ -1,0 +1,370 @@
+# Updated FlowSpec Configurations Based on Your Attack Report
+
+Based on analysis of your recent DDoS attacks, here are **rate-limiting FlowSpec rules** tailored to your network's attack patterns:
+
+---
+
+## Attack Summary from Your Network
+
+| Attack Type | Target Examples | Peak Traffic | Severity | Packet Sizes |
+|------------|----------------|--------------|----------|-------------|
+| **DNS Amplification** | 103.26.247.16 | 11.5 Gbps | Critical/Severe | 440-1518 bytes |
+| **UDP Fragments** | 103.26.247.16 | 11.5 Gbps | Critical | 426-1518 bytes |
+| **TCP SYN Flood** | 103.135.252.0/24, 45.124.14.0/24 | Variable | Minor-Major | Typical SYN packets |
+| **TCP SYN-ACK Flood** | Multiple /24 and /25 networks | Variable | Minor-Major | Typical SYN-ACK packets |
+| **UDP Carpet Bomb** | 103.26.247.0/24 | Major | Major | Various |
+
+---
+
+## 1. DNS Amplification Attack Mitigation
+
+### Attack Profile:
+- **Peak**: 11.5 Gbps, **Average**: 530 Mbps
+- **Packet sizes**: 440-1518 bytes (large DNS responses)
+- **Source port**: 53 (DNS)
+
+### FlowSpec Rule with Rate-Limiting:
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        source-port 53;
+        packet-length >=440 <=1518;  # Match amplification packet sizes
+    }
+    then {
+        rate-limit 100000000;  # 100 Mbps - Allow legitimate DNS, block flood
+    }
+}
+```
+
+### Aggressive Blocking (for severe attacks):
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        source-port 53;
+        packet-length >512;  # Block large DNS responses
+    }
+    then discard;
+}
+```
+
+---
+
+## 2. UDP Fragment Attack Mitigation
+
+### Attack Profile:
+- **Peak**: 11.5 Gbps
+- **Packet sizes**: Wide range (426-1518 bytes)
+- **Fragmented packets**
+
+### FlowSpec Rule:
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        fragment is-fragment;
+    }
+    then {
+        rate-limit 50000000;  # 50 Mbps - Most legitimate traffic isn't fragmented
+    }
+}
+```
+
+### Strict Blocking:
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        fragment is-fragment;
+    }
+    then discard;  # Block all fragmented UDP packets
+}
+```
+
+---
+
+## 3. TCP SYN Flood Mitigation
+
+### Attack Profile:
+- Targeting multiple /24 and /25 networks
+- Severity: Minor to Major
+
+### FlowSpec Rule for /24 Network:
+```
+flow-route <target-network>/24 {
+    match {
+        protocol tcp;
+        destination <target-network>/24;
+        tcp-flags syn;  # Match SYN flag
+        tcp-flags !ack; # Ensure ACK is not set
+    }
+    then {
+        rate-limit 500000000;  # 500 Mbps - Adjust based on legitimate traffic
+    }
+}
+```
+
+### FlowSpec Rule for /25 Network:
+```
+flow-route <target-network>/25 {
+    match {
+        protocol tcp;
+        destination <target-network>/25;
+        tcp-flags syn;
+        tcp-flags !ack;
+    }
+    then {
+        rate-limit 250000000;  # 250 Mbps
+    }
+}
+```
+
+### Per-IP Protection:
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol tcp;
+        destination <target-ip>/32;
+        tcp-flags syn;
+        tcp-flags !ack;
+    }
+    then {
+        rate-limit 100000000;  # 100 Mbps per IP
+    }
+}
+```
+
+---
+
+## 4. TCP SYN-ACK Flood Mitigation
+
+### FlowSpec Rule:
+```
+flow-route <target-network>/24 {
+    match {
+        protocol tcp;
+        destination <target-network>/24;
+        tcp-flags syn;
+        tcp-flags ack;  # Both SYN and ACK set
+    }
+    then {
+        rate-limit 200000000;  # 200 Mbps
+    }
+}
+```
+
+---
+
+## 5. UDP Carpet Bomb (Distributed UDP Flood)
+
+### Attack Profile:
+- Targets entire /24 network
+- Multiple destination IPs
+
+### FlowSpec Rule:
+```
+flow-route <target-network>/24 {
+    match {
+        protocol udp;
+        destination <target-network>/24;
+    }
+    then {
+        rate-limit 1000000000;  # 1 Gbps for entire /24
+    }
+}
+```
+
+---
+
+## 6. UDP Bad Ports Attack
+
+### Attack Profile:
+- Port 0 (invalid)
+- Protocol: UDP
+
+### FlowSpec Rule:
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        destination-port 0;
+    }
+    then discard;  # Port 0 is always invalid
+}
+```
+
+### Block Common Attack Ports:
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        destination-port =0 =19 =123 =161 =389 =1900;  # Bad/amplification ports
+    }
+    then discard;
+}
+```
+
+---
+
+## 7. Multi-Vector Attack Protection
+
+### Combined Rule for Your Most Attacked IP (103.26.247.16):
+```
+# DNS Amplification
+flow-route 103.26.247.16/32 {
+    match {
+        protocol udp;
+        destination 103.26.247.16/32;
+        source-port 53;
+        packet-length >512;
+    }
+    then discard;
+}
+
+# UDP Fragments
+flow-route 103.26.247.16/32 {
+    match {
+        protocol udp;
+        destination 103.26.247.16/32;
+        fragment is-fragment;
+    }
+    then discard;
+}
+
+# UDP Bad Ports
+flow-route 103.26.247.16/32 {
+    match {
+        protocol udp;
+        destination 103.26.247.16/32;
+        destination-port 0;
+    }
+    then discard;
+}
+
+# General UDP Rate Limit (catch-all)
+flow-route 103.26.247.16/32 {
+    match {
+        protocol udp;
+        destination 103.26.247.16/32;
+    }
+    then {
+        rate-limit 2000000000;  # 2 Gbps baseline
+    }
+}
+```
+
+---
+
+## Rate-Limiting Guidelines Based on Your Traffic
+
+| Attack Type | Recommended Rate Limit | Justification |
+|------------|----------------------|---------------|
+| **DNS Amplification** | 100-200 Mbps | Based on 530 Mbps average attack |
+| **UDP Fragments** | 50 Mbps or discard | Legitimate fragmented UDP is rare |
+| **TCP SYN Flood (/24)** | 500 Mbps | Adjust based on legitimate connection rate |
+| **TCP SYN Flood (/25)** | 250 Mbps | Half of /24 limit |
+| **TCP SYN Flood (per IP)** | 100 Mbps | Per-host protection |
+| **UDP Carpet Bomb** | 1 Gbps | Network-wide protection |
+
+---
+
+## Implementation Best Practices
+
+### 1. **Gradual Deployment**
+```bash
+# Start with rate-limiting (not discard)
+# Monitor for 24-48 hours
+# Adjust thresholds based on legitimate traffic impact
+# Move to discard rules only after validation
+```
+
+### 2. **Monitoring Commands** (Cisco IOS XR example)
+```
+show flowspec ipv4
+show flowspec ipv4 summary
+show flowspec ipv4 <prefix>
+```
+
+### 3. **Tiered Response Strategy**
+
+**Tier 1 - Detection (Kentik alerts)**
+- Monitor for threshold violations
+- Alert on attack patterns
+
+**Tier 2 - Rate Limiting**
+- Apply rate limits at 2x normal traffic
+- Allow legitimate traffic through
+
+**Tier 3 - Aggressive Blocking**
+- If attack persists, move to discard rules
+- Block specific attack vectors completely
+
+---
+
+## Packet Size-Based Rules
+
+Based on your attack data showing specific packet sizes:
+
+### Small Packet Attacks (426-448 bytes):
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        packet-length >=426 <=448;
+    }
+    then {
+        rate-limit 100000000;  # 100 Mbps
+    }
+}
+```
+
+### Large Packet Attacks (1490-1518 bytes):
+```
+flow-route <target-ip>/32 {
+    match {
+        protocol udp;
+        destination <target-ip>/32;
+        packet-length >=1490 <=1518;
+        source-port 53;  # DNS amplification signature
+    }
+    then {
+        rate-limit 150000000;  # 150 Mbps
+    }
+}
+```
+
+---
+
+## Quick Reference: Your Top Attacked Networks
+
+| Network | Attack Types | Recommended Action |
+|---------|-------------|-------------------|
+| **103.26.247.16** | DNS Amp, UDP Frag, Bad Ports | Multi-vector protection |
+| **103.135.252.0/24** | TCP SYN, SYN-ACK | Rate-limit TCP floods |
+| **45.124.14.0/24** | TCP SYN, SYN-ACK | Rate-limit TCP floods |
+| **103.84.38.0/24** | TCP SYN, SYN-ACK | Rate-limit TCP floods |
+
+---
+
+## Next Steps
+
+1. **Deploy rate-limiting rules** for your most attacked networks first
+2. **Monitor Kentik dashboards** for mitigation effectiveness
+3. **Adjust rate limits** based on legitimate traffic patterns
+4. **Implement tiered response** - escalate to discard rules if needed
+5. **Document baseline traffic** for each protected network
+6. **Set up automated FlowSpec** deployment via Kentik API for faster response
+
+---
+
+**Data Explorer Link for DNS Attack Analysis:** [View Traffic Analysis](/v4/core/explorer/24e78163d47e5b40401791eed9edfd4e)
+
+These FlowSpec rules are specifically tuned to your network's attack patterns. Start with rate-limiting and adjust thresholds based on your operational experience and legitimate traffic requirements.
