@@ -1,0 +1,102 @@
+User Documentation
+
+The DDoS attack mitigation runbooks for the specified attack types are as follows:
+
+UDP Amplification Attacks: Kentik provides a DDoS Defense template specifically for Amplification Reflection Attacks. These attacks exploit connectionless services that respond with large amplified responses to spoofed source IPs, reflecting traffic to the target. The policy focuses on high-amplification services and monitors sudden increases in bits/second of traffic to a single destination IP, also identifying the source port of involved services. This template can be cloned and customized for specific needs to detect and mitigate UDP amplification attacks effectively[citation_6].
+
+Volumetric DDoS Attacks Over 100 Gbps: For large volumetric attacks, Kentik offers a "Total Traffic Volumetric Attack" catch-all policy that covers attack traffic potentially missed by more specific policies. This policy analyzes all traffic categorized by protocol and is designed to detect wide-ranging volumetric floods. Additionally, Cloudflare Magic Transit integration is recommended for high-volume mitigations, as it applies mitigation only when traffic exceeds minimum thresholds (e.g., 100K pps for TCP/UDP). For lower volumes, alternative mitigation platforms like RTBH or Flowspec are suggested[citation_6][citation_5].
+
+TCP SYN-ACK Flood Mitigation Using BGP Flowspec: Kentik supports Flowspec-based mitigation compliant with IETF RFC 8955, which allows precise definition of affected traffic and a broad range of mitigation actions. Flowspec mitigations can be configured on supported routing devices and enabled in the Kentik portal. Traffic matching uses BGP NLRI encoding to filter packets by various components (IP, ports, etc.), and traffic actions include rate limiting, discarding, DSCP marking, route-target redirect, and next-hop redirect. The Flowspec method requires careful configuration of condition controls and traffic actions to mitigate TCP SYN-ACK floods effectively. The mitigation can be triggered automatically or manually via alert policies[citation_2][citation_5].
+
+Multi-vector DDoS Attacks: Kentik’s DDoS Defense automates detection, investigation, and mitigation of multi-vector attacks using machine learning-based traffic profiling to identify attacks faster and more accurately. The system supports automatic triggers for mitigations including RTBH, Flowspec, and external hardware/services. Multiple DDoS Defense templates cover various attack vectors such as TCP SYN Floods, UDP Floods, ICMP Floods, TCP ACK/PSH Floods, Distributed TCP RST & FIN Floods, UDP Fragments Attack, and others. These templates can be cloned and customized to address complex multi-vector attack scenarios[citation_1][citation_6].
+
+
+# DDoS Attack Mitigation Runbooks
+
+Here are the comprehensive runbooks for mitigating the specific DDoS attack types you requested:
+
+## 1. UDP Amplification Attacks
+
+Kentik provides a dedicated **DDoS Defense template for Amplification Reflection Attacks**:
+
+- **Attack Pattern**: Exploits connectionless services (DNS, NTP, SSDP, etc.) that respond with large amplified responses to spoofed source IPs, reflecting traffic to the target
+- **Detection Method**: Monitors sudden increases in bits/second of traffic to a single destination IP
+- **Key Indicators**: Identifies the source port of involved high-amplification services
+- **Implementation**: Clone and customize the template for your specific environment and thresholds
+
+## 2. Volumetric DDoS Attacks Over 100 Gbps
+
+For large-scale volumetric attacks, Kentik offers a multi-layered approach:
+
+- **Primary Policy**: "Total Traffic Volumetric Attack" catch-all policy that covers attack traffic potentially missed by more specific policies
+- **Analysis Method**: Analyzes all traffic categorized by protocol to detect wide-ranging volumetric floods
+- **High-Volume Mitigation**: **Cloudflare Magic Transit integration** is recommended for attacks exceeding 100 Gbps
+  - Applies mitigation only when traffic exceeds minimum thresholds (e.g., 100K pps for TCP/UDP)
+- **Lower-Volume Alternatives**: For sub-100 Gbps attacks, use RTBH (Remotely Triggered Black Hole) or Flowspec-based mitigation
+
+## 3. TCP SYN-ACK Flood Mitigation Using BGP Flowspec
+
+Kentik supports **IETF RFC 8955-compliant Flowspec** mitigation:
+
+### Configuration Requirements:
+- Configure Flowspec on supported routing devices
+- Enable Flowspec mitigation in the Kentik portal
+
+### Traffic Matching:
+- Uses BGP NLRI encoding to filter packets by:
+  - Source/Destination IP addresses
+  - Source/Destination ports
+  - Protocol types
+  - Packet length
+  - DSCP values
+
+### Mitigation Actions:
+- **Rate limiting**: Throttle attack traffic
+- **Discarding**: Drop malicious packets
+- **DSCP marking**: Mark packets for downstream handling
+- **Route-target redirect**: Redirect to scrubbing centers
+- **Next-hop redirect**: Reroute traffic to mitigation devices
+
+### Trigger Methods:
+- Automatic triggering via alert policies
+- Manual activation when needed
+
+## 4. Multi-Vector DDoS Attacks
+
+Kentik's **DDoS Defense** provides comprehensive multi-vector protection:
+
+### Detection:
+- **Machine learning-based traffic profiling** for faster and more accurate attack identification
+- Automated detection, investigation, and mitigation workflow
+
+### Supported Attack Vectors:
+- TCP SYN Floods
+- UDP Floods
+- ICMP Floods
+- TCP ACK/PSH Floods
+- Distributed TCP RST & FIN Floods
+- UDP Fragments Attack
+- And many more
+
+### Mitigation Options:
+- **RTBH (Remotely Triggered Black Hole)**: For immediate traffic blocking
+- **Flowspec**: For granular traffic filtering
+- **External hardware/services**: Integration with third-party scrubbing centers
+
+### Customization:
+- Clone existing templates
+- Customize thresholds and conditions
+- Combine multiple templates for complex attack scenarios
+
+---
+
+## Best Practices
+
+1. **Pre-configure mitigation platforms** before attacks occur
+2. **Test runbooks regularly** to ensure they work as expected
+3. **Set appropriate thresholds** to avoid false positives
+4. **Use layered defense** combining multiple mitigation methods
+5. **Monitor mitigation effectiveness** and adjust as needed
+6. **Document custom configurations** for your specific environment
+
+For more detailed information on implementing these runbooks, refer to the Kentik Knowledge Base articles on DDoS Defense and Mitigation Overview.
