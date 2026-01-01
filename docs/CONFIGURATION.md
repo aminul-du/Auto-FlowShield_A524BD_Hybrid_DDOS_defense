@@ -50,3 +50,13 @@ python -m scripts.cli export-schema --out config/schema.json
 ```
 
 This produces a machine-readable schema that can be consumed by editors, CI checks, or external tooling.
+
+## Hosting & redirects
+- This repository can be published via **GitHub Pages** (serve the `docs/` folder) or deployed to Netlify. To make the site root point at the documentation folder we add simple redirect helpers:
+  - `index.html` (root) performs a meta-refresh redirect to `/docs/` (fallback for raw file hosting).
+  - `docs/_redirects` contains Netlify-style rules to map `/` and `/*` to `/docs/`.
+  - `docs/CNAME` is a placeholder for a custom domain (replace `your.custom.domain` with your domain if you use GitHub Pages or Netlify).
+
+Notes:
+- To publish on GitHub Pages, enable Pages in repository settings and set the source to the `docs/` folder.
+- To use Netlify, add this repo as a site and leave build command blank if serving static files directly; `_redirects` will handle root -> docs routing.
