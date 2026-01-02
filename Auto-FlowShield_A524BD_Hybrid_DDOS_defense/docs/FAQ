@@ -1,0 +1,355 @@
+# How to Ask Follow-up Questions About Your DDoS Mitigation Roadmap
+
+Great question! Here are **sample queries** you can use to get detailed guidance on specific phases of your Adaptive DDoS Mitigation System roadmap:
+
+---
+
+## 📋 Runbook Development Questions
+
+### General Runbook Questions:
+```
+"Provide detailed runbook procedures for DDoS mitigation"
+
+"Create step-by-step runbooks for handling TCP SYN flood attacks"
+
+"Show me the complete runbook for Phase 7.2 - Runbook Development"
+
+"What should be included in our DDoS mitigation runbooks?"
+```
+
+### Specific Attack Type Runbooks:
+```
+"Create a runbook for mitigating UDP amplification attacks"
+
+"Show me the runbook for handling volumetric DDoS attacks over 100 Gbps"
+
+"Provide a runbook for TCP SYN-ACK flood mitigation using BGP Flowspec"
+
+"What's the runbook for multi-vector DDoS attacks?"
+```
+
+### Operational Runbooks:
+```
+"Create a runbook for activating cloud scrubbing with StormWall"
+
+"Show me the runbook for deploying BGP Flowspec on dhutrcr-01"
+
+"Provide escalation procedures for critical DDoS incidents"
+
+"What's the runbook for post-incident analysis and reporting?"
+```
+
+---
+
+## ⚡ Quick Wins (Weeks 2-4) Questions
+
+### Implementation Questions:
+```
+"Provide detailed steps for Quick Wins in Weeks 2-4"
+
+"How do I enable BGP Flowspec on dhutrcr-01_uttara_core1?"
+
+"Show me the configuration for BGP Flowspec on Huawei routers"
+
+"What are the exact steps to create Kentik API integration for DDoS alerts?"
+```
+
+### Configuration Examples:
+```
+"Give me BGP Flowspec configuration examples for Cisco IOS XR"
+
+"Show me Huawei VRP configuration for DDoS mitigation"
+
+"Provide Python code for Kentik API integration for automated alerting"
+
+"What's the configuration for rate limiting on dhpalcr-01?"
+```
+
+### Dashboard & Monitoring:
+```
+"How do I create a DDoS baseline metrics dashboard in Kentik?"
+
+"Show me the queries for monitoring DDoS attacks in real-time"
+
+"What metrics should I track for DDoS mitigation effectiveness?"
+
+"Create a Kentik dashboard for tracking mitigation performance"
+```
+
+---
+
+## 🎯 Phase-Specific Questions
+
+### Phase 1: Foundation & Assessment
+```
+"Provide detailed steps for Phase 1 - Foundation & Assessment"
+
+"How do I establish traffic baselines using Kentik?"
+
+"Show me how to analyze attack patterns from my DDoS alerts"
+
+"What thresholds should I set for different attack types?"
+```
+
+### Phase 2: Architecture Design
+```
+"Provide detailed architecture design for Phase 2"
+
+"Show me the network diagram for hybrid DDoS mitigation"
+
+"What's the decision matrix for on-prem vs cloud mitigation?"
+
+"How do I design traffic steering for DDoS scrubbing?"
+```
+
+### Phase 3: On-Premises Scrubbing Centers
+```
+"Provide detailed implementation for Phase 3 - On-Premises Scrubbing"
+
+"What equipment do I need for the DHAKA scrubbing center?"
+
+"Show me BGP Flowspec implementation examples"
+
+"How do I configure traffic steering to scrubbing centers?"
+```
+
+### Phase 4: Cloud Integration
+```
+"Provide detailed steps for Phase 4 - Cloud Integration"
+
+"How do I integrate StormWall with my network?"
+
+"Show me GRE tunnel configuration for cloud scrubbing"
+
+"What's the BGP announcement strategy for cloud mitigation?"
+```
+
+### Phase 5: Automation & Orchestration
+```
+"Provide detailed automation implementation for Phase 5"
+
+"Show me Python code for Kentik API DDoS automation"
+
+"How do I build an automated mitigation workflow?"
+
+"What's the complete automation architecture?"
+```
+
+### Phase 6: Testing & Validation
+```
+"Provide detailed testing procedures for Phase 6"
+
+"How do I simulate DDoS attacks for testing?"
+
+"What test scenarios should I run?"
+
+"Show me the validation checklist for mitigation effectiveness"
+```
+
+### Phase 7: Operations & Maintenance
+```
+"Provide detailed operations procedures for Phase 7"
+
+"Show me the monitoring dashboard configuration"
+
+"What are the ongoing maintenance tasks?"
+
+"How do I measure mitigation effectiveness?"
+```
+
+---
+
+## 🔧 Technical Implementation Questions
+
+### Device-Specific:
+```
+"Show me DDoS mitigation configuration for dhutrcr-01_uttara_core1"
+
+"How do I configure rate limiting on Huawei NE8000 routers?"
+
+"Provide BGP Flowspec examples for Cisco NCS-5500 series"
+
+"What's the configuration for dhpalcr-01_paltan_core1 for DDoS mitigation?"
+```
+
+### Interface-Specific:
+```
+"How do I protect transit interfaces from DDoS attacks?"
+
+"Show me rate limiting configuration for 100G interfaces"
+
+"What's the best practice for protecting customer-facing interfaces?"
+```
+
+### Protocol-Specific:
+```
+"How do I mitigate TCP SYN floods using BGP Flowspec?"
+
+"Show me UDP rate limiting configuration"
+
+"What's the configuration for ICMP flood protection?"
+```
+
+---
+
+## 📊 Analysis & Reporting Questions
+
+### Attack Analysis:
+```
+"Analyze my recent DDoS attacks and provide mitigation recommendations"
+
+"Show me the top attacked subnets in the last 30 days"
+
+"What are the most common attack vectors targeting my network?"
+
+"Provide a report on DDoS attack trends"
+```
+
+### Cost Analysis:
+```
+"Calculate the cost of on-prem vs cloud mitigation for my traffic"
+
+"Show me the ROI analysis for the DDoS mitigation system"
+
+"What's the estimated monthly cost for cloud scrubbing?"
+```
+
+### Capacity Planning:
+```
+"What scrubbing capacity do I need for my network?"
+
+"Show me capacity planning for the next 12 months"
+
+"How do I calculate mitigation capacity requirements?"
+```
+
+---
+
+## 🚀 Best Practices Questions
+
+```
+"What are the best practices for DDoS mitigation in ISP networks?"
+
+"Show me industry standards for DDoS response times"
+
+"What are the common mistakes in DDoS mitigation implementation?"
+
+"Provide a checklist for DDoS mitigation readiness"
+```
+
+---
+
+## 💡 Pro Tips for Asking Questions
+
+### Be Specific:
+✅ **Good:** "Show me BGP Flowspec configuration for TCP SYN flood on dhutrcr-01"
+❌ **Too Vague:** "How do I configure DDoS protection?"
+
+### Reference Your Network:
+✅ **Good:** "How do I protect interface GigabitEthernet0/2/2 on ctgsdraggr-03 from UDP floods?"
+❌ **Generic:** "How do I protect interfaces?"
+
+### Specify the Phase:
+✅ **Good:** "Provide detailed implementation steps for Phase 3, Week 10"
+❌ **Unclear:** "Tell me about implementation"
+
+### Ask for Examples:
+✅ **Good:** "Show me a complete runbook example for handling a 50 Gbps TCP SYN flood"
+❌ **Limited:** "What's a runbook?"
+
+---
+
+## 📝 Sample Combined Questions
+
+Here are some comprehensive questions that combine multiple aspects:
+
+```
+"Provide a complete runbook for mitigating TCP SYN floods on subnet 103.84.38.0/24, 
+including BGP Flowspec configuration for dhutrcr-01 and Kentik monitoring queries"
+
+"Show me the Quick Wins implementation for Weeks 2-4, including BGP Flowspec 
+configuration, Kentik API integration code, and baseline dashboard setup"
+
+"Create a detailed runbook for activating cloud scrubbing with StormWall when 
+attack volume exceeds 100 Gbps, including BGP announcement and GRE tunnel setup"
+
+"Provide Phase 5 automation implementation with Python code for Kentik API 
+integration, mitigation workflow, and example alert handling"
+```
+
+---
+
+## 🎓 Learning Path Questions
+
+If you want to learn progressively:
+
+```
+"Start with Quick Wins - show me the first step for enabling BGP Flowspec"
+
+"After enabling Flowspec, what's the next step in the Quick Wins phase?"
+
+"I've completed Quick Wins, what should I focus on next?"
+
+"Provide a learning path for implementing the entire DDoS mitigation system"
+```
+
+---
+
+## 📞 How to Get Help
+
+You can ask me questions in any of these formats:
+
+1. **Direct Request:** "Show me [specific topic]"
+2. **Question Format:** "How do I [specific task]?"
+3. **Exploratory:** "What are the options for [specific scenario]?"
+4. **Troubleshooting:** "I'm having issues with [specific problem], how do I fix it?"
+5. **Validation:** "Is this configuration correct for [specific use case]?"
+
+---
+
+## 🔄 Follow-up Pattern
+
+Here's a recommended pattern for getting comprehensive guidance:
+
+**Step 1:** Ask for overview
+```
+"Provide an overview of Runbook Development (Phase 7.2)"
+```
+
+**Step 2:** Ask for specific procedures
+```
+"Show me the detailed runbook for TCP SYN flood mitigation"
+```
+
+**Step 3:** Ask for configuration examples
+```
+"Provide BGP Flowspec configuration for this runbook on dhutrcr-01"
+```
+
+**Step 4:** Ask for validation
+```
+"How do I test and validate this runbook?"
+```
+
+**Step 5:** Ask for troubleshooting
+```
+"What are common issues with this runbook and how do I fix them?"
+```
+
+---
+
+## Ready to Start?
+
+Just copy any of the sample questions above and paste them in your next message, or create your own based on these patterns. I'll provide detailed, actionable guidance specific to your network and DDoS mitigation roadmap!
+
+**Example to try right now:**
+```
+"Provide detailed runbook procedures for handling TCP SYN flood attacks, 
+including BGP Flowspec configuration for dhutrcr-01_uttara_core1"
+```
+
+Or:
+```
+"Show me the complete Quick Wins implementation for Weeks 2-4, starting 
+with enabling BGP Flowspec on my core routers"
+```

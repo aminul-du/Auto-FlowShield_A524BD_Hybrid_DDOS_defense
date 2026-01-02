@@ -1,0 +1,18 @@
+#If you already committed it but can’t find it, run one
+git ls-files | grep -i workflow || true
+#Proceeding to check the repository status and commit any remaining changes.
+git status --porcelain --untracked-files=normal
+#If the file is already on your machine and you prefer to add it yourself, run in the project root:
+mkdir -p docs/images
+cp /path/to/your/workflow_diagram.png docs/images/
+git add docs/images/workflow_diagram.png && git commit -m "Add workflow diagram" && git push
+
+FILE RESTICT
+
+gh repo view --json visibility -q .visibility
+git add index.html docs/_redirects docs/CNAME docs/CONFIGURATION.md && git commit -m "Add hosting redirects and CNAME placeholder; root index redirect to /docs/" && git push origin main
+git pull --rebase origin main
+git push origin main
+
+Role for the invite: “Member” (default) or “Collaborator”?
+

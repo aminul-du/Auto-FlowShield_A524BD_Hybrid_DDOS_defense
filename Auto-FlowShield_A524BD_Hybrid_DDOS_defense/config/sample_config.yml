@@ -1,0 +1,28 @@
+# Sample configuration for Auto-FlowShield A524BD
+
+# Management and safety
+router_mgmt_ip: "192.0.2.1"
+watchdog:
+  latency_threshold_ms: 100   # Threshold in milliseconds to trigger safety stop
+  check_interval_s: 2
+
+# BGP / FlowSpec settings
+bgp:
+  flow_spec_enabled: true
+  flow_spec_threshold_pps: 100000  # Packets per second threshold for FlowSpec activation
+
+# Cloud scrubbing provider settings
+cloud_scrubbing:
+  provider: "stormwall"
+  api_endpoint: "https://api.stormwall.example"
+  api_key: "<REPLACE_WITH_KEY>"
+
+# Automation and orchestration
+automation:
+  enable: true
+  orchestration_interval_s: 60
+
+# Logging
+logging:
+  level: "INFO"
+  file: "/var/log/flowshield/flowshield.log"
