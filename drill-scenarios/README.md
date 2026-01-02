@@ -1,6 +1,6 @@
-# Auto-FlowShield_A524BD_Hybrid_DDOS_defense – Drill Scenarios
+# FlowShield A524BD – Drill Scenarios
 
 This directory contains:
 - DDoS drill scenario documentation
-- Attack simulation and validation scripts
-- Response reports and evidence
+- Attack simulation scripts
+- Validation and response reports
